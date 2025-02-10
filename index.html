@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Background Remover</title>
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    /* Global Styles */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #6e8efb, #a777e3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    /* Container Card */
+    .container {
+      background: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+    }
+    h1 { margin-bottom: 20px; color: #333; }
+    /* Form Styling */
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    input[type="file"] {
+      padding: 10px;
+      border: 2px dashed #a777e3;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.3s ease;
+    }
+    input[type="file"]:hover { border-color: #6e8efb; }
+    button {
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background-color: #6e8efb;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover { background-color: #5a7de0; }
+    /* Spinner Styling */
+    .spinner {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #6e8efb;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    /* Result Section */
+    .result-container {
+      margin-top: 30px;
+      display: none;
+    }
+    .result-container h2 { color: #333; margin-bottom: 15px; }
+    #result {
+      max-width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      display: block;
+      margin: 0 auto 20px;
+    }
+    .download-btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      background-color: #a777e3;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background-color 0.3s ease;
+    }
+    .download-btn:hover { background-color: #8f64d1; }
+    #result-message {
+      margin-top: 10px;
+      font-size: 16px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Background Remover</h1>
+    <form id="upload-form">
+      <!-- Allow multiple file selection -->
+      <input type="file" id="images" name="images" accept="image/*" multiple required />
+      <button type="submit">Remove Background</button>
+    </form>
+    
+    <!-- Spinner (initially hidden) -->
+    <div id="spinner" class="spinner" style="display: none;"></div>
+    
+    <!-- Result Section (initially hidden) -->
+    <div id="result-container" class="result-container">
+      <h2>Result:</h2>
+      <!-- Image element for single image result -->
+      <img id="result" src="" alt="Processed image" style="display: none;" />
+      <!-- Message area for multiple images -->
+      <div id="result-message"></div>
+      <!-- Download button for both image and ZIP -->
+      <a id="download-btn" href="" class="download-btn" style="display: none;">Download</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('upload-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      // Show spinner while processing
+      const spinner = document.getElementById('spinner');
+      spinner.style.display = "block";
+      
+      // Hide previous result elements
+      const resultContainer = document.getElementById('result-container');
+      resultContainer.style.display = "none";
+      const resultImage = document.getElementById('result');
+      resultImage.style.display = "none";
+      const resultMessage = document.getElementById('result-message');
+      resultMessage.textContent = "";
+      const downloadBtn = document.getElementById('download-btn');
+      downloadBtn.style.display = "none";
+      
+      const fileInput = document.getElementById('images');
+      const files = fileInput.files;
+      if (files.length === 0) {
+        alert("Please select at least one image.");
+        spinner.style.display = "none";
+        return;
+      }
+      
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append('images', files[i]);
+      }
+      
+      try {
+        // Replace the URL below with your backend endpoint URL if different.
+        const response = await fetch('http://127.0.0.1:5000/remove-bg', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          alert("Error: " + (errorData.error || "Failed to process images"));
+          return;
+        }
+        
+        // Check the Content-Type header to decide how to display the result.
+        const contentType = response.headers.get('Content-Type');
+        if (contentType && contentType.includes('image')) {
+          // Single image processed.
+          const blob = await response.blob();
+          const objectURL = URL.createObjectURL(blob);
+          resultImage.src = objectURL;
+          resultImage.style.display = "block";
+          downloadBtn.href = objectURL;
+          downloadBtn.textContent = "Download Image";
+          downloadBtn.style.display = "inline-block";
+          resultContainer.style.display = "block";
+        } else if (contentType && contentType.includes('zip')) {
+          // Multiple images processed; ZIP file returned.
+          const blob = await response.blob();
+          const objectURL = URL.createObjectURL(blob);
+          downloadBtn.href = objectURL;
+          downloadBtn.textContent = "Download ZIP";
+          downloadBtn.style.display = "inline-block";
+          resultMessage.textContent = "Multiple images processed. Please download the ZIP file.";
+          resultContainer.style.display = "block";
+        } else {
+          alert("Unexpected content type: " + contentType);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert("An error occurred while processing your images.");
+      } finally {
+        spinner.style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>
