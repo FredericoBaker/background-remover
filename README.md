@@ -1,6 +1,18 @@
 # Background Remover
 
-Flask backend with a static HTML frontend for fast and efficient image background removal using [rembg](https://github.com/danielgatis/rembg). Simple, scalable, and user-friendly.
+Ever tried to remove a background from an image and ended up trapped in a labyrinth of paywalls, account sign-ups, and "free trials" that expire faster than your patience? Yeah, same.  
+
+So, instead of dealing with all that nonsense, I built my own background remover in **less than 20 minutes** using **Flask**, **rembg**, and **ChatGPT**. Honestly, finding a good library to handle background removal took longer.  
+
+This is a solution that you can run locally - just upload your image, get the background removed, and move on with your life.  
+
+### Features:
+- 🚀 **Fast** – Background removal in seconds.  
+- 🖼️ **Bulk support** – Process multiple images at once.  
+- 📦 **Download ZIP** – Get all processed images in one click.  
+- 🎯 **Simple** – No clutter, just results.  
+
+Flask backend + static HTML frontend. Powered by [rembg](https://github.com/danielgatis/rembg).
 
 ## Installation
 
